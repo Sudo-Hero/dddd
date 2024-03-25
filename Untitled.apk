@@ -1,0 +1,379 @@
+
+---------- PR1 BASIC R-PROGREMMING
+
+#1 Read File
+student_data<-read.csv(file.choose(), sep = ",", header = T)
+View(student_data)
+#2 extract firest few lines from dataset
+head(student_data)
+#3check data type of dataset fields
+str(student_data)
+#4 get summary
+summary(student_data)
+#5 check dimension of dataset & list col. names
+dim(student_data)
+colnames(student_data)
+#6 list row sets where total marks are more than 750
+student_data[student_data$marks>750,]
+#7 list only first 2 col. where total marks are more than 750 & class is sycs
+student_data[student_data$marks>750 & student_data == "sycs", 1:2]
+#8 sort the data in ascending order of total marks
+student_data <- student_data[order(student_data$marks),]
+print(student_data)
+#9 list records where total marks are not entered
+student_data[is.na(student_data$marks),]
+#10 plot scatter plot which shows relation btwn avg mrks and class
+plot(student_data$marks, student_data$rollno, xlab = "Marks", ylab = "Roll no")
+#11 box plot for total marks
+boxplot(student_data$marks, main = "Boxplot of Total Marks")
+
+------------ PR2 T-TEST 
+
+#1
+time<-read.csv(file.choose(),header = TRUE, sep = ",")
+summary(time)
+t.test(time$UK, time$Germany, alternative="two.sided", var.equal = FALSE)
+#2
+time1<-read.csv(file.choose(),header = TRUE, sep = ",")
+summary(time1)
+t.test(time1$Before, time1$After, alternative="greater",paired = T)
+#3
+time3<-read.csv(file.choose(),sep = ",",header = T)
+summary(time3)
+t.test(time3$IQ, alternative = "two.sided", var.equal = 100)
+
+
+---------- PR3 F-TEST AND ANOVA
+
+#Prac3
+#1
+ftest<-read.csv(file.choose(),sep = ",", header = T)
+var.test(ftest$A, ftest$B, alternative = "two.sided")
+#2
+ftest2<-read.csv(file.choose(),sep = ",",header = T)
+var.test(ftest2$time_g1, ftest2$time_g2, alternative = "two.sided")
+#3 One-Way Anova
+data1<-read.csv(file.choose(),sep = ",",header = T)
+names(data1)
+head(data1)
+anv<-aov(formula = satindex~dept, data=data1)
+summary(anv)
+#4
+data2<-read.csv(file.choose(),sep = ",",header = T)
+names(data2)
+head(data2)
+anv2 <- aov(formula = satindex~dept+exp+dept*exp,data = data2)
+summary(anv2)
+#5 
+data3<-read.csv(file.choose(),sep = ",",header = T)
+names(data3)
+head(data3)
+anv4<-aov(formula = satindex~sunlight+watering+sunlight*watering,data=data3)
+summary(anv4)
+#6
+data4<-read.csv(file.choose(),sep = ",",header = T)
+names(data4)
+head(data4)
+anv5<-aov(formula = satindex~grp,data=data4)
+summary(anv5)
+
+
+---------- PR4 SIMPLE AND MULTIPLE REGRESSION
+
+data("iris")
+names(iris)
+pairs(~Species+Sepal.Length+Sepal.Width+Petal.Length+Petal.Width,data=iris)
+
+model1<- lm(Sepal.Length~. ,data=iris)
+summary(model1)
+
+iris$pred<-fitted(model1)
+head(iris)
+
+iris$res<-residuals(model1)
+head(iris)
+
+library(car)
+vif(model1)
+
+plot(iris$pred,iris$res,col="blue")
+shapiro.test(iris$res)
+
+ncvTest(model1,~Sepal.Length+Sepal.Width+Petal.Length)
+
+library(car)
+durbinWatsonTest(model1)
+
+influencePlot(model1)
+iris <- iris[-33]
+
+library("caret")
+library("lattice")
+library("ggplot2")
+
+data("iris")
+summary(iris)
+data<- createDataPartition(iris$Sepal.Length,p=0.8,list=F)
+head(data)
+
+dim(data)
+traindata<-iris[data,]
+testdata<- iris[-data,]
+dim(traindata)
+dim(testdata)
+names(traindata)
+
+
+modeltrain<- lm(Sepal.Length~Sepal.Width+Petal.Length+Petal.Width,data=traindata)
+modeltrain$res<-residuals(modeltrain)
+RMStrain<-sqrt(mean(modeltrain$res**2))
+RMStrain
+
+testdata$pred<-Predict(modeltrain,testdata)
+testdata$res<-testdata$Sepal.Length-testdata$pred
+RMStest<-sqrt(mean(testdata$res**2))
+RMStest
+
+library("caret")
+kfold<- trainControl(method = "cv",number = 4)
+modelfold<- train(Sepal.Length~Sepal.Width+Petal.Length+Petal.Width,data = iris,methodfold="lm",trControl=kfold)
+modelfold
+
+null<-lm(Sepal.Length~1,data=iris)
+full<- lm(Sepal.Length~Sepal.Width+Petal.Length+Petal.Width,data=iris)
+
+step(null,scope = list(lower=null,upper = full),direction = "forward")
+
+step(null,scope = list(lower=null,upper = full),direction = "backward")
+
+
+
+--------- PR5 LOGISTIC REGRESSION
+
+
+#Step1
+loan<-read.csv(file.choose(),header = T,sep = ",")
+head(loan)
+
+#Step2
+summary(loan)
+
+#Step3
+str(loan)
+loan$AGE<- as.factor(loan$AGE)
+names(loan)
+
+#Step4
+"Creating Model"
+model1<-glm(DEFAULTER~.,family= binomial, data = loan)
+summary(model1)
+
+#Step5
+"gloal testing for the acceptance of the model"
+null<-glm(DEFAULTER~1, family = binomial, data = loan)
+anova(null, model1, test = "Chisq")
+
+#Step6
+loan$predprob<-round(fitted(model1),2)
+"Classification and misclassification analysis"
+library(gmodels)
+table(loan$DEFAULTER, fitted(model1)>0.5)
+sens<-95/(88+95)*100
+sens
+spc<-478/(478+39)*100
+spc
+
+#Step7
+"Check the trade off between sensitivity & specificity using different values"
+table(loan$DEFAULTER, fitted(model1)>0.1)
+table(loan$DEFAULTER, fitted(model1)>0.2)
+table(loan$DEFAULTER, fitted(model1)>0.3)
+table(loan$DEFAULTER, fitted(model1)>0.4)
+table(loan$DEFAULTER, fitted(model1)>0.5)
+
+#Step8
+"Goodness of fit using reverse opertaional curves"
+pred<-predict(model1,loan, type = "response")
+library(ROCR)
+rocrpred<-prediction(pred,loan$DEFAULTER)
+rocrpref<-performance(rocrpred,"tpr","fpr")
+"to check proper cut off point"
+plot(rocrpref, colorize = TRUE, print.cutoffs.at = seq(0.1, by = 0.1))
+library(pROC)
+
+#step9
+auc(loan$DEFAULTER, pred)
+"to check coefficients"
+coef(model1)
+exp(coef(model1))
+"as credit to debit ratio of person increases by 1 uint, odds of the event increses by 77%"
+"model validation same as linear regression"
+"variable selection same as linear regression"
+
+
+
+------------ PR6 DECESION TREE 
+
+
+#using chaid
+
+titanic<-read.csv(file.choose(), header=T, sep=",")
+"Using Chaid"
+summary (titanic)
+names (titanic)
+install.packages ("partykit")
+install.packages ("CHAID", repos = "http://R-Forge.R-project.org", type = "source")
+library (CHAID)
+library(partykit)
+titanic$Survived<-as.factor (titanic Survived)
+titanic$Sibsp<-as.factor (titanic$sibsp)
+titanic$Parch<-as.factor (titanic$Parch)
+titanic$Pclass<-as.factor (titanic$Pclass)
+summary (titanic Survived)
+names (titanic)
+tree<-chaid(formula Survived-Pclass+Sex+SibSp+Parch+Embarked, data=titanic) class (titanic$Survived)
+plot(tree, type="simple")
+
+
+#using rpart
+
+"Using rpart"- summary (titanic)
+names (titanic)
+library(rpart)
+fit<-rpart (Survived-Pclass+Sex+Age+SibSp+Parch+Fare+Embarked, data-titanic, method="class")
+plot(fit)
+text(fit)
+install.packages('rattle')
+install.packages('rpart.plot') install.packages('RColorBrewer')
+library (rattle)
+library (rpart.plot)
+library (RColorBrewer)
+fancyRpartPlot(fit)
+Prediction<-predict(fit, titanic, type="class")
+Prediction
+
+#decision tree for titanic dataset
+
+
+
+
+----------- PR7 K-MEANS CLUSTERING
+
+
+#1
+data("iris")
+names(iris)
+View(iris)
+#2
+new_data<-subset(iris, select = c(-Species))
+new_data
+#3
+c1<-kmeans(new_data,3)
+c1
+#4
+data<-new_data
+wss<-sapply(1:15, function(k){kmeans(data,k)$tot.withinss})
+wss
+plot(1:15,wss,type="b",pch=19,frame=FALSE,xlab = "number of cluster K", ylab = "Total within cluster sum of square")
+#5
+library(cluster)
+clusplot(new_data,c1$cluster, color = TRUE,shade = TRUE, labels = 2, line = 0)
+c1$cluster
+#6
+"agglomartive clustering"
+cluster<-hclust(dist(iris[,3:4]))
+plot(cluster)
+clusterCut<-cutree(cluster,3)
+table(clusterCut, iris$Species)
+#7
+library(ggplot2)
+ggplot(iris,aes(Petal.Length, Petal.Width, color = iris$Species))+geom_point(alpha = 0.4, size = 3.5)+geom_point(col= clusterCut)+scale_color_manual(values = c('black','red','green'))
+clusters<-hclust(dist(iris[,3:4]),method = 'average')
+clusterCut1<-cutree(clusters,3)
+table(clusterCut1,iris$Species)
+
+
+
+
+------------- PR8 PRICIPAL COMPONENT ANALYSIS
+
+
+#1 load the dataset we just need first 4 records
+irisiris<-iris[1:4,]
+irisiris
+#2Calculating the covariance matrix of the 'iris' dataset
+Cov_data<-cov(iris[,1:4])
+Cov_data
+#3 Finding eigenvectors and eigenvalues using the covariance matrix
+Eigen_data<-eigen(Cov_data)
+Eigen_data
+#4 Performing PCA using princomp function
+PCA_data<-princomp(iris[,1:4], cor = FALSE)
+PCA_data
+#5 Comparing the output variances
+Eigen_data$values
+PCA_data$dev^2
+#6Extracting the loadings of the first four principal components
+PCA_data$loadings[,1:4]
+#7 Summarizing the results of PCA
+summary(PCA_data)
+#8Creating a biplot for the PCA results
+biplot(PCA_data)
+#9Creating a screeplot for the PCA results
+screeplot(PCA_data, type = "lines")
+#10 Selecting the first principal component for the second model
+score_12<-PCA_data$loadings[,1]
+scores<-as.matrix(iris[,1:4])%*% score_12
+scores
+#11Loading necessary libraries for naiveBayes model and Fitting the first naiveBayes model over the entire data and Calculating accuracy for the first naiveBayes model
+library(class)
+library(e1071)
+model1 <- naiveBayes(iris[,1:4], iris[,5])
+predictions <- predict(model1, newdata = iris[,1:4])
+table(predictions, iris[,5])
+#12 Fitting the second naiveBayes model using the first principal component and Calculating accuracy for the second naiveBayes model
+model2<-naiveBayes(scores, iris[,5])
+table(predict(model2, scores), iris[,5])
+
+
+
+------------- PR10 TIME SERIES ANALYSIS
+
+
+
+#1 import data "AirPassengers" 
+AirPassengers
+#2 view data
+View(AirPassengers)
+AirPassengers
+#3 create class & declare str & starting, ending of data
+class(AirPassengers)
+str(AirPassengers)
+start(AirPassengers)
+end(AirPassengers)
+#4 calculate freq & summary of data
+frequency(AirPassengers)
+summary(AirPassengers)
+#5plot data then pass line from graph
+plot(AirPassengers)
+abline(reg = lm(AirPassengers~time(AirPassengers)))
+#6 create cycle
+cycle(AirPassengers)
+#7 plot graph using mean
+plot(aggregate(AirPassengers, FUN = mean))
+#8 Create box plot
+boxplot(AirPassengers~cycle(AirPassengers))
+#9 create autocorrelation funct of data & log of data
+acf(AirPassengers)
+acf(log(AirPassengers))
+#10 create partial correlation funct using data
+pacf(diff(log(AirPassengers)))
+#11 plot graph of diff of log of data
+plot(diff(log(AirPassengers)))
+#12 use arima fuction 
+(fit<-arima(log(AirPassengers),c(0,1,1), seasonal = list(order = c(0,1,1), period = 12)))
+#13 create 2 var pred & pred1 then call pred1
+pred<- predict(fit,n.head=10*12)
+pred1<-round(2.718^pred$pred,0)
+pred1
+ts.plot(AirPassengers,pred1, log = "y", lty = c(1,3))
